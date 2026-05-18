@@ -67,7 +67,7 @@ export const productRepository = {
         const values: any[] = [];
 
         if (filters.search) {
-            values.push(`%${filters.search}`);
+            values.push(`%${filters.search}%`);
             query += ` AND name ILIKE $${values.length}`;
         }
 
