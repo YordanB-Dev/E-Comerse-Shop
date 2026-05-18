@@ -63,7 +63,7 @@ export const productService = {
     },
 
     async createProduct(productdata: any) {
-        const [name, price, stock] = productdata;
+        const {name, price, stock} = productdata;
 
         if (!name || name.trim().length < 3) {
             throw new AppError("Invalid name", 400);
