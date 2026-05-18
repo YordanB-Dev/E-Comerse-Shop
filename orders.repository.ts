@@ -62,7 +62,7 @@ export const orderRepository = {
             return order;
         } catch (error) {
             await client.query("ROLLBACK");
-            throw error;
+            throw Error;
         } finally {
             client.release();
         }
