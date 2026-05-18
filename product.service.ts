@@ -1,6 +1,5 @@
 import productRepository  from "../repositories/task.repository.js";
 import { AppError } from "../middleware/types/AppError.js";
-import { profileEnd } from "node:console";
 
 interface productFilters {
     search?: string,
