@@ -57,10 +57,6 @@ export const orderService: any = {
             throw new AppError("Order not found", 404);
         }
 
-        if (order.user_id !== userId) {
-            throw new AppError("You dont have permison fro this order", 403);
-        }
-
         const items = await orderRepository.findItemByOrderId(orderId);
 
         return {
