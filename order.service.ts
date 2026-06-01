@@ -1,8 +1,6 @@
 import orderRepository from "../repositories/orders.repository.js";
 import productRepository from "../repositories/product.repository.js";
 import { AppError } from "../middleware/types/AppError.js";
-import type { LargeNumberLike } from "node:crypto";
-import { throwDeprecation } from "node:process";
 
 interface CreateOrderInput {
     userId: number;
