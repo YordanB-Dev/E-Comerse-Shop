@@ -1,7 +1,5 @@
 import type {Request, Response, NextFunction} from "express";
 import jwt from "jsonwebtoken";
-import { decode } from "node:punycode";
-import { describe } from "node:test";
 
 interface JwtPayload {
   id: number;
