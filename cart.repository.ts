@@ -1,3 +1,5 @@
+import { runInNewContext } from "node:vm";
+import productController from "../controllers/product.controller.js";
 import pool from "../db.js";
 import { AppError } from "../middleware/types/AppError.js";
 
@@ -22,7 +24,6 @@ interface CartItemWithProduct extends CartItem {
 };
 
 export const cartRepository = {
-
     async getOrCreateCart(userId: number): Promise<Cart> {
         const existing = await pool.query<Cart> (
             `SELECT * FROM carts WHERE user_id = $1`,
@@ -31,7 +32,7 @@ export const cartRepository = {
 
         if (existing.rows[0]) {
             return existing.rows[0];
-        };
+        }
 
         const newCart = await pool.query<Cart> (
             `INSERT INTO carts (user_id) VALUES ($1) RETURNING *`,
@@ -40,7 +41,7 @@ export const cartRepository = {
 
         if (!newCart.rows[0]) {
             throw new AppError(`Failed to create cart`, 500);
-        };
+        }
 
         return newCart.rows[0];
     },
@@ -49,23 +50,23 @@ export const cartRepository = {
         const result = await pool.query<CartItem> (
             `INSERT INTO cart_items (cart_id, product_id, quantity)
             VALUES ($1, $2, $3)
-            ON CONFLICT (cart_id, product_id, quantity)
+            ON CONFLICT (cart_id, product_id)
             DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
             RETURNING *`,
             [cartId, productId, quantity]
         );
 
-        if (!result.rows[0]) {
-            throw new AppError(`Faield to add or update item in cart`, 400);
+        if (!result) {
+            throw new AppError(`Failed to create or update cart`, 400);
         }
 
-        return result.rows[0];
+        return result.rows[0]!;
     },
 
-    async removeItem(cartId: number, productId: number): Promise<void> {
+    async removeItem(cartId: number, productId: number, quantity: number): Promise<void> {
         await pool.query (
-            `DELETE FROM cart_items WHERE cart_id = $1 AND product_id = $2`,
-            [cartId, productId]
+            `DELETE FROM cart_items WHERE cart_id = $1 AND product_id = $2 AND quantity = $3`,
+            [cartId, productId, quantity]
         );
     },
 
