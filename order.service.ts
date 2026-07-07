@@ -52,7 +52,7 @@ export const orderService: any = {
         return order;
     },
 
-    async getOrderById(orderId: number, userId: number) {
+    async getOrderById(orderId: number) {
         const order = await orderRepositoy.findById(orderId);
         if (!order) {
             throw new AppError(`Order not found`, 404);
