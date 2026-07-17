@@ -1,3 +1,4 @@
+import { allowedNodeEnvironmentFlags } from "node:process";
 import pool from "../db.js";
 
 interface ProductFilters {
@@ -42,9 +43,8 @@ export const productRepository = {
 
         if (filters.sortBy && ALLOWED_SORT_COLUMNS.includes(filters.sortBy)) {
             const order = filters.sortBy === "asc" ? "ASC" : "DESC";
-
-            query += ` ORDER BY ${filters.sortBy} ${order}`;
-        }else {
+             query += ` ORDER BY ${filters.sortBy} ${order}`;
+        } else {
             query += ` ORDER BY created_at DESC`;
         }
 
@@ -60,10 +60,11 @@ export const productRepository = {
 
         const result = await pool.query(query, values);
         return result.rows;
+
     },
 
     async count(filters: ProductFilters): Promise<number> {
-        let query = ` SELECT COUNT (*) FROM products WHERE 1=1`;
+        let query = `SELECT COUNT (*) FROM products WHERE 1=1`;
         const values: any[] = [];
 
         if (filters.search) {
@@ -98,7 +99,7 @@ export const productRepository = {
         const {name, description, price, stock, categoryId} = data;
 
         const result = await pool.query(
-            `INSERT INTO products (name, description, price, stock_quantity, categoryId)
+            `INSERT INTO products (name, description, price, stock_quantity, category_Id )
             VALUES ($1, $2, $3, $4, $5)
             RETURNING *`,
             [name, description, price, stock, categoryId]
