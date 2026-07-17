@@ -8,25 +8,21 @@ interface authBody {
     username: string;
 }
 
-export const register = asyncHandler (
-    async (req: Request, res: Response) => {
-        const {email, password, username} = req.body as authBody;
+const register = asyncHandler(async(req: Request, res: Response) => {
+    const {email, password, username} = req.body as authBody;
 
-        const result = await userService.register(email, password, username);
+    const result = await userService.register(email, password, username);
 
-        return res.status(201).json(result);
-    }
-);
+    return res.status(201).json(result);
+});
 
-export const login = asyncHandler(
-    async (req: Request, res: Response) => {
-        const { email, password } = req.body as authBody;
+const login = asyncHandler(async(req: Request, res: Response) => {
+    const {email, password} = req.body as authBody;
 
-        const user = await userService.login(email, password);
+    const user = await userService.login(email, password);
 
-        return res.status(200).json(user);
-    }
-);
+    return res.status(201).json(user);
+});
 
 export default {
     register,
