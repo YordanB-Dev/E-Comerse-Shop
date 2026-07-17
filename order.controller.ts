@@ -4,25 +4,25 @@ import asyncHandler from "../middleware/asyncHandler.js";
 
  
 export const orderController = {
-    createOrder: asyncHandler(async (req: Request, res: Response) => {
-        const userId = (req as any).user.id;
-        const { items } = req.body;
-        const order = await orderService.createOrder({userId, items});
 
+    createOrder: asyncHandler(async(req: Request, res: Response) => {
+        const userId = (req as any).user.id;
+        const {items} = req.body;
+        const order = await orderService.createOrder({userId, items});
         return res.status(201).json(order);
     }),
 
-    getByUserId: asyncHandler(async(req: Request, res: Response) => {
+    getOrdersByUser: asyncHandler(async(req: Request, res: Response) => {
         const userId = (req as any).user.id;
-        const order = await orderService.getByUserId(userId);
-        return res.status(200).json(order);
+        const order = await orderService.getOrdersByUser(userId);
+        return res.status(201).json(order);
     }),
 
     getOrderById: asyncHandler(async(req: Request, res: Response) => {
-        const orderId = Number (req.params.id);
-        const userId = (req as any).user.id
-        const order = await orderService.getByID(orderId, userId);
-        return res.status(200).json(order);
+        const orderId = Number(req.params.id);
+        const userId = (req as any).user.id;
+        const order = await orderService.getOrderById(orderId, userId);
+        return res.status(201).json(order);
     })
 };
 
