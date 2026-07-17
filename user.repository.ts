@@ -1,22 +1,21 @@
-import { getDefaultHighWaterMark } from "node:stream";
-import db from "../db.js";
 import type { QueryResult } from "pg";
+import db from "../db.js";
 
 interface User {
-    id: number
-    name: string,
+    id: number,
     email: string,
     password: string,
     username: string;
+    role: "user" | "admin"
 }
 
-export const createUser = async (
+const createUser = async (
     email: string,
     password: string,
     username: string
 ): Promise<User> => {
-    const result: QueryResult<User> = await db.query(
-        `INSER INTO users (email, password, username)
+    const result: QueryResult<User> = await db.query<User> (
+        `INSERT INTO users (email, password, username)
         VALUES ($1, $2, $3)
         RETURNING id, email, password, username`,
         [email, password, username]
@@ -25,7 +24,8 @@ export const createUser = async (
     return result.rows[0]!;
 };
 
-export const findUserByEmail = async (email: string): Promise<User> => {
+
+const findUserByEmail = async (email: string): Promise<User> => {
     const result: QueryResult<User> = await db.query(
         `SELECT * FROM users WHERE email = $1`,
         [email]
@@ -33,6 +33,7 @@ export const findUserByEmail = async (email: string): Promise<User> => {
 
     return result.rows[0]!;
 };
+
 
 export default {
     createUser,
