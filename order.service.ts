@@ -1,6 +1,6 @@
 import productRepository from "../repositories/product.repository.js";
 import { AppError } from "../middleware/types/AppError.js";
-import orderRepositoy from "../repositories/orders.repository.js";
+import orderRepositoy from "../repositories/order.repository.js";
 
 
 interface CreateOrderInput {
@@ -12,9 +12,10 @@ interface CreateOrderInput {
 }
 
 
-export const orderService: any = {
+export const orderSerivce: any = {
+
     async createOrder(input: CreateOrderInput) {
-        if (!input || input.items.length === 0) {
+        if (!input || input.items.length === 0 ) {
             throw new AppError(`Order need to be at least 1 product`, 400);
         }
 
@@ -22,14 +23,14 @@ export const orderService: any = {
 
         for (const item of input.items) {
             const productResult = await productRepository.findById(item.productId);
-            const product = productResult?.rows?.[0];
+            const product = await productResult?.rows?.[0];
 
             if (!product) {
-                throw new AppError(`Product with ID ${item.productId} not exist`, 404);
+                throw new AppError(`Product with id ${product.id} not found`, 404);
             }
 
-            if (product.stock.quantity < item.quantity) {
-                throw new AppError(`Not enough amount for ${product.name}`, 404);
+            if (product.stock.quantiy < item.quantity) {
+                throw new AppError(`Not enough amount for product ${product.name}`, 400);
             }
 
             orderItems.push({
@@ -38,7 +39,7 @@ export const orderService: any = {
                 price: product.price
             });
 
-            const order = await orderRepositoy.create({
+            const order = await orderRepositoy.create ({
                 userId: input.userId,
                 items: orderItems
             });
@@ -47,7 +48,7 @@ export const orderService: any = {
         };
     },
 
-    async getOrderByUserId(userId: number) {
+    async getOrdersByUser(userId: number) {
         const order = await orderRepositoy.findUserById(userId);
         return order;
     },
@@ -76,9 +77,9 @@ export const orderService: any = {
         if (order.status === `paid`) {
             throw new AppError(`You cant change paid order`, 400);
         }
-        
+
         return order;
     }
 };
 
-export default orderService
+export default orderSerivce;
