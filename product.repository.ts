@@ -41,6 +41,11 @@ export const productRepository = {
             query += ` AND price <= $${values.length}`;
         }
 
+        if (filters.categoryId) {
+            values.push(filters.categoryId)
+            query += ` AND category_id = $${values.length}`
+        }
+
         if (filters.sortBy && ALLOWED_SORT_COLUMNS.includes(filters.sortBy)) {
             const order = filters.sortBy === "asc" ? "ASC" : "DESC";
              query += ` ORDER BY ${filters.sortBy} ${order}`;
