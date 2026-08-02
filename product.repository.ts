@@ -1,117 +1,87 @@
-import { allowedNodeEnvironmentFlags } from "node:process";
-import pool from "../db.js";
+import productRepository from "../repositories/product.repository.js";
+import { AppError } from "../middleware/types/AppError.js";
 
-interface ProductFilters {
-    search?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    sortBy?: string;
-    order?: "asc" | "desc";
-    limit?: number;
-    offset?: number;
+interface productFilters {
+    search?: string | undefined;
+    minPrice?: number | undefined;
+    maxPrice?: number | undefined;
+    categoryId: number | undefined;
+    sortBy?: string | undefined;
+    order?: "asc" | "desc" | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
 }
 
-interface CreateProductData {
+interface CreateOrderInput {
     name: string;
-    description?: string;
+    description: string;
     price: number;
     stock: number;
     categoryId: number;
 }
 
-const ALLOWED_SORT_COLUMNS = [`name`, `price`, `stock_quantity`, `category_id`];
 
-export const productRepository = {
-    async findAll(filters: any) {
-        let query = ` SELECT * FROM products WHERE 1=1`;
-        const values: any[] = [];
+export const productService = {
+    async getAll(querParams: any) {
+        const page = Math.max(1, Number(querParams.page) || 1);
+        const limit = Math.min(50, Number(querParams.limit) || 10);
+        const offset = (page - 1) * limit;
 
-        if (filters.search) {
-            values.push(`%${filters.search}%`);
-            query += ` AND name ILIKE $${values.length}`;
-        }
+        const filters: productFilters = {
+            search: querParams.search,
+            minPrice: querParams.minPrice ? Number(querParams.minPrice) : undefined,
+            maxPrice: querParams.maxPrice ? Number(querParams.maxPrice) : undefined,
+            categoryId: querParams.categoryId ? Number(querParams.categoryId) : undefined,
+            sortBy: querParams.sortBy || `created_at`,
+            order: querParams.order === "asc" ? "asc" : "desc",
+            limit,
+            offset
+        };
 
-        if (filters.minPrice) {
-            values.push(filters.minPrice);
-            query += ` AND price >= $${values.length}`;
-        }
+        const [product, total] = await Promise.all([
 
-        if (filters.maxPrice) {
-            values.push(filters.maxPrice)
-            query += ` AND price <= $${values.length}`;
-        }
+            productRepository.findAll(filters),
+            productRepository.count(filters)
+        ]);
 
-        if (filters.categoryId) {
-            values.push(filters.categoryId)
-            query += ` AND category_id = $${values.length}`
-        }
-
-        if (filters.sortBy && ALLOWED_SORT_COLUMNS.includes(filters.sortBy)) {
-            const order = filters.sortBy === "asc" ? "ASC" : "DESC";
-             query += ` ORDER BY ${filters.sortBy} ${order}`;
-        } else {
-            query += ` ORDER BY created_at DESC`;
-        }
-
-        if (filters.limit) {
-            values.push(filters.limit);
-            query += ` LIMIT $${values.length}`;
-        }
-
-        if (filters.offset) {
-            values.push(filters.offset);
-            query += ` OFFSET $${values.length}`;
-        }
-
-        const result = await pool.query(query, values);
-        return result.rows;
-
+        return {
+            data: product,
+            meta: {
+                page,
+                limit,
+                count: product.length,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
     },
 
-    async count(filters: ProductFilters): Promise<number> {
-        let query = `SELECT COUNT (*) FROM products WHERE 1=1`;
-        const values: any[] = [];
+    async getById(id: number) {
+        const product = await productRepository.findById(id);
 
-        if (filters.search) {
-            values.push(`%${filters.search}%`);
-            query += ` AND name ILIKE $${values.length}`;
+        if (!product) {
+            throw new AppError(`Product not found`, 404);
         }
 
-        if (filters.minPrice) {
-            values.push(filters.minPrice);
-            query += ` AND price >= $${values.length}`;
-        }
-
-        if (filters.maxPrice) {
-            values.push(filters.maxPrice);
-            query += ` AND price <= $${values.length}`;
-        }
-
-        const result = await pool.query(query, values);
-        return result.rows[0].count;
+        return product;
     },
 
-    async findById(id: number) {
-        const result = await pool.query(
-            `SELECT * FROM products WHERE id = $1`,
-            [id]
-        );
+    async createProduct(productData: any) {
+        const {name, price, stock} = productData;
 
-        return result.rows[0];
-    },
+        if (!name || name.trim().length < 3) {
+            throw new AppError(`Invalid name`, 400);
+        }
 
-    async createProduct(data: any) {
-        const {name, description, price, stock, categoryId} = data;
+        if (price <= 0) {
+            throw new AppError(`Invalid price`, 400);
+        }
 
-        const result = await pool.query(
-            `INSERT INTO products (name, description, price, stock_quantity, category_Id )
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING *`,
-            [name, description, price, stock, categoryId]
-        );
+        if (stock < 0) {
+            throw new AppError(`Invalid stock`, 400)
+        }
 
-        return result.rows[0];
+        return await productRepository.createProduct(productData);
     }
 };
 
-export default productRepository;
+export default productService;
