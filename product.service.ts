@@ -5,6 +5,7 @@ interface productFilters {
     search?: string | undefined;
     minPrice?: number | undefined;
     maxPrice?: number | undefined;
+    categoryId: number | undefined;
     sortBy?: string | undefined;
     order?: "asc" | "desc" | undefined;
     limit?: number | undefined;
@@ -30,6 +31,7 @@ export const productService = {
             search: querParams.search,
             minPrice: querParams.minPrice ? Number(querParams.minPrice) : undefined,
             maxPrice: querParams.maxPrice ? Number(querParams.maxPrice) : undefined,
+            categoryId: querParams.categoryId ? Number(querParams.categoryId) : undefined,
             sortBy: querParams.sortBy || `created_at`,
             order: querParams.order === "asc" ? "asc" : "desc",
             limit,
