@@ -1,4 +1,3 @@
-import { allowedNodeEnvironmentFlags } from "node:process";
 import pool from "../db.js";
 
 interface ProductFilters {
