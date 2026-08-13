@@ -1,29 +1,28 @@
 import pool from "../db.js";
 import { AppError } from "../middleware/types/AppError.js";
 
-
 interface Cart {
-    id: number,
-    user_id: number,
-    created_at: Date
-};
+    id: number;
+    user_id: number;
+    created_at: Date;
+}
 
 interface CartItem {
-    id: number,
-    cart_id: number,
-    product_id: number,
-    quantity: number,
-    added_at: Date
-};
+    id: number;
+    cart_id: number;
+    product_id: number;
+    quantity: number;
+    added_at: Date;
+}
 
 interface CartItemWithProduct extends CartItem {
-    name: string,
-    price: number
-};
+    name: string;
+    price: number;
+}
 
-export const cartRepsoitory = {
+export const cartRepository = {
     async getOrCreatCart(userId: number): Promise<Cart> {
-        const existing = await pool.query<Cart> (
+        const existing = await pool.query<Cart>(
             `SELECT * FROM carts WHERE user_id = $1`,
             [userId]
         );
@@ -32,48 +31,53 @@ export const cartRepsoitory = {
             return existing.rows[0];
         }
 
-        const newCart = await pool.query<Cart> (
-            `INSERT INTO carts (userId) VALUES ($1) RETURNING *`,
+        const newCart = await pool.query<Cart>(
+            `INSERT INTO carts (user_id) VALUES ($1) RETURNING *`,
             [userId]
         );
-
-        if (!newCart) {
-            throw new AppError(`Cart was not created`, 500);
-        }
 
         return newCart.rows[0]!;
     },
 
     async addItem(cartId: number, productId: number, quantity: number): Promise<CartItem> {
-        const result = await pool.query<CartItem> (
-            `INSERT INTO cart_items (cart_id, product_id, quantity)
-            VALUES ($1, $2, $3)
-            ON CONFLICT (cart_Id, product_id, quantity)
-            DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
-            RETURNING *`,
-            [cartId, productId, quantity]
+        const existing = await pool.query<CartItem>(
+            `SELECT * FROM cart_items WHERE cart_id = $1 AND product_id = $2`,
+            [cartId, productId]
         );
 
-        if (!result) {
-            throw new AppError(`Failed to create or update cart`, 400);
+        if (existing.rows[0]) {
+            const updated = await pool.query<CartItem>(
+                `UPDATE cart_items SET quantity = quantity + $1
+                 WHERE cart_id = $2 AND product_id = $3
+                 RETURNING *`,
+                [quantity, cartId, productId]
+            );
+            return updated.rows[0]!;
         }
+
+        const result = await pool.query<CartItem>(
+            `INSERT INTO cart_items (cart_id, product_id, quantity)
+             VALUES ($1, $2, $3)
+             RETURNING *`,
+            [cartId, productId, quantity]
+        );
 
         return result.rows[0]!;
     },
 
-    async removeItem(cartId: number, productId: number, quantity: number): Promise<void> {
-        await pool.query (
-            `DELETE FROM cart_items WHERE cart_id = $1 AND productId = $2`,
-            [cartId, productId, quantity]
+    async removeItem(cartId: number, productId: number): Promise<void> {
+        await pool.query(
+            `DELETE FROM cart_items WHERE cart_id = $1 AND product_id = $2`,
+            [cartId, productId]
         );
     },
 
     async getCartWithItems(cartId: number): Promise<CartItemWithProduct[]> {
-        const result = await pool.query<CartItemWithProduct> (
+        const result = await pool.query<CartItemWithProduct>(
             `SELECT ci.*, p.name, p.price
-            FROM cart_items ci
-            JOIN products = p ON ci.products_id = p.id
-            WHERE ci.cart_id = $1`,
+             FROM cart_items ci
+             JOIN products p ON ci.product_id = p.id
+             WHERE ci.cart_id = $1`,
             [cartId]
         );
 
@@ -81,11 +85,11 @@ export const cartRepsoitory = {
     },
 
     async clearCart(cartId: number): Promise<void> {
-        await pool.query (
+        await pool.query(
             `DELETE FROM cart_items WHERE cart_id = $1`,
             [cartId]
         );
     }
 };
 
-export default cartRepsoitory;
+export default cartRepository;
