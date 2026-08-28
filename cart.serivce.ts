@@ -18,28 +18,28 @@ interface CartResult {
 }
 
 interface CartItemWithProduct extends CartItem {
-    name: string,
-    price: number
-};
+    name: string;
+    price: number;
+}
 
-export const cartSerivce = {
+export const cartSerice = {
     async getCart(userId: number): Promise<CartResult> {
-        const cart = await cartRepository.getOrCreatCart(userId);
+        const cart = await cartRepository.getOrCreateCart(userId);
         const items = await cartRepository.getCartWithItems(cart.id);
 
         return {
             cartId: cart.id,
             items,
-            total: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+            total: items.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0)
         };
     },
 
-    async addItem(userId: number, productId: number, quantity: number) {
+    async addItem(userId: number, productctId: number, quantity: number) {
         if (quantity <= 0) {
             throw new AppError("Cart need to be at least 1 product", 400);
         }
 
-        const product = await productRepository.findById(productId);
+        const product = await productRepository.findById(productctId);
         if (!product) {
             throw new AppError("Product not found", 404);
         }
@@ -48,22 +48,22 @@ export const cartSerivce = {
             throw new AppError("Not enough amount for this product", 400);
         }
 
-        const cart = await cartRepository.getOrCreatCart(userId);
-        await cartRepository.addItem(cart.id, productId, quantity);
+        const cart = await cartRepository.getOrCreateCart(userId);
+        await cartRepository.addItem(cart.id, productctId, quantity);
         return this.getCart(userId);
     },
 
     async removeItem(userId: number, productId: number) {
-        const cart = await cartRepository.getOrCreatCart(userId);
+        const cart = await cartRepository.getOrCreateCart(userId);
         await cartRepository.removeItem(cart.id, productId);
         return this.getCart(userId);
     },
 
-    async clearCart(userId: number) {
-        const cart = await cartRepository.getOrCreatCart(userId);
+    async clearCart(userId: number, productId: number) {
+        const cart = await cartRepository.getOrCreateCart(userId);
         await cartRepository.clearCart(cart.id);
-        return { message: "Cart is clear" };
+        return { message: "Cart is clear"};
     }
 };
 
-export default cartSerivce;
+export default cartSerice;
