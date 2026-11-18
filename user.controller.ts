@@ -1,8 +1,6 @@
 import type { Request, Response } from "express";
 import userService from "./userService.js";
 import asyncHandler from "../../asyncHandler.js";
-import { register } from "node:module";
-import userRepository from "./userRepository.js";
 
 interface authBody {
     email: string;
