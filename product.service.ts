@@ -1,61 +1,73 @@
-import productRepository from "../repositories/product.repository.js";
-import { AppError } from "../middleware/types/AppError.js";
+import productRepository from "../repositories/productRepository.js";
+import { AppError } from "../../utils/AppError.js";
+import type { UpdateProduct } from "../repositories/productRepository.js";
+import type { ProductFilters } from "../repositories/productRepository.js";
+import { get } from "node:http";
+import { Query } from "pg";
 
-interface ProductFilters {
-    search?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    categoryId?: number;
-    sortBy?: string;
-    order?: "asc" | "desc";
-    limit?: number;
-    offset?: number;
-}
+export const productSerivce = {
 
-interface CreateOrderInput {
-    name: string;
-    description: string;
-    price: number;
-    stock: number;
-    categoryId: number;
-}
+    async getAllProducts(queryResult: any) {
 
-export const productService = {
-    async getAll(queryResult: any) {
-        const page = Math.max(1, Number(queryResult.page) || 1);
+        const page = Number(queryResult.page) || 1;
+        const limit = Number(queryResult.limit) || 10;
 
-        const limit = Math.min(
-            50,
-            Number(queryResult.limit) || 10
-        );
+        if (!Number.isInteger(page || page <= 0)) {
+            throw new AppError("Invalid page", 400);
+        }
+
+        if (!Number.isInteger(limit || limit <= 0 || limit > 50)) {
+            throw new AppError("Invalid limit", 400);
+        }
 
         const offset = (page - 1) * limit;
 
         const filters: ProductFilters = {
             sortBy: queryResult.sortBy || "created_at",
-            order: queryResult.order === "asc" ? "asc" : "desc",
+            order: queryResult.order || "asc" ? "asc" : "desc",
             limit,
             offset
         };
 
-        if (queryResult.search) {
-            filters.search = queryResult.search;
+        if (queryResult.search !== undefined) {
+            filters.search = String(queryResult.search);
         }
 
         if (queryResult.minPrice !== undefined) {
             filters.minPrice = Number(queryResult.minPrice);
+
+            if (!Number.isFinite(filters.minPrice) || filters.minPrice < 0) {
+            throw new AppError("Invlaid price", 400);
+
+            }
         }
 
         if (queryResult.maxPrice !== undefined) {
             filters.maxPrice = Number(queryResult.maxPrice);
+
+            if (!Number.isFinite(filters.maxPrice) || filters.maxPrice < 0) {
+                throw new AppError("Invalid price", 400);
+            }
+        }
+
+        if (
+            filters.minPrice !== undefined &&
+            filters.maxPrice !== undefined &&
+            filters.minPrice > filters.maxPrice
+        ) {
+            throw new AppError("Minimum price cannot exceed maximum price", 400);
         }
 
         if (queryResult.categoryId !== undefined) {
             filters.categoryId = Number(queryResult.categoryId);
+
+            if (!Number.isFinite(filters.categoryId) || filters.categoryId <= 0) {
+                throw new AppError("Invalid category ID", 400);
+            }
         }
 
         const [product, total] = await Promise.all([
-            productRepository.findAll(filters),
+            productRepository.getAllProducts(filters),
             productRepository.count(filters)
         ]);
 
@@ -64,39 +76,13 @@ export const productService = {
             meta: {
                 page,
                 limit,
-                count: product.length,
-                totalPages: Math.ceil(total / limit)
+                count: total,
+                totalPage: Math.ceil(total / limit)
             }
         };
     },
 
-    async getById(id: number) {
-        const product = await productRepository.findById(id);
-
-        if (!product) {
-            throw new AppError("Product not found", 404);
-        }
-
-        return product;
-    },
-
-    async createProduct(productData: any) {
-        const {name, price, stock} = productData;
-
-        if (!name || name.trim().length < 3) {
-            throw new AppError("Invalid name", 400);
-        }
-
-        if (price <= 0) {
-            throw new AppError("Invalid price", 400);
-        }
-
-        if (stock < 0) {
-            throw new AppError("Invalid stock", 400);
-        }
-
-        return await productRepository.createProduct(productData);
+    async getProductById(id: number) {
+        
     }
-};
-
-export default productService;
+}
