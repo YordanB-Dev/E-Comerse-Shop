@@ -1,7 +1,5 @@
-import { allowedNodeEnvironmentFlags, availableMemory } from "node:process";
 import pool from "../../db.js";
 import type { QueryResult } from "pg";
-import { queryObjects } from "node:v8";
 
 export interface Product {
     id: number;
