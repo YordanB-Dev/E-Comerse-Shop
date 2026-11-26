@@ -2,8 +2,7 @@ import productRepository from "../repositories/productRepository.js";
 import { AppError } from "../../utils/AppError.js";
 import type { UpdateProduct } from "../repositories/productRepository.js";
 import type { ProductFilters } from "../repositories/productRepository.js";
-import { get } from "node:http";
-import { Query } from "pg";
+
 
 export const productSerivce = {
 
